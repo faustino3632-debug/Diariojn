@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diario Jorje Newbery</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Playfair Display (estilo diario) e Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                    },
+                    colors: {
+                        newbery: {
+                            navy: '#0f294a',
+                            blue: '#1d4ed8',
+                            sky: '#38bdf8',
+                            gold: '#eab308',
+                            paper: '#faf9f6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-newbery-paper text-slate-800 font-sans min-h-screen flex flex-col selection:bg-sky-200 selection:text-newbery-navy">
+
+    <!-- ==================== MODAL DE BIENVENIDA (PRIMER INGRESO) ==================== -->
+    <div id="welcomeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/75 backdrop-blur-sm p-4 transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all p-6 sm:p-8 text-center">
+            <!-- Mini Escudo Institucional -->
+            <div class="mx-auto w-20 h-20 mb-4 flex items-center justify-center">
+                <svg viewBox="0 0 120 120" class="w-full h-full drop-shadow-md" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="shieldGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#0f294a"/>
+                            <stop offset="100%" stop-color="#1e40af"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M60 8 L104 24 V58 C104 86 84 104 60 112 C36 104 16 86 16 58 V24 Z" fill="url(#shieldGradSmall)" stroke="#eab308" stroke-width="4"/>
+                    <path d="M26 52 Q42 42 56 54 Q40 56 26 52 Z" fill="#38bdf8"/>
+                    <path d="M94 52 Q78 42 64 54 Q80 56 94 52 Z" fill="#38bdf8"/>
+                    <path d="M38 68 Q49 63 60 70 Q71 63 82 68 V82 Q71 75 60 82 Q49 75 38 82 Z" fill="#ffffff"/>
+                    <circle cx="60" cy="34" r="6" fill="#eab308"/>
+                </svg>
+            </div>
+
+            <h2 class="font-serif text-2xl sm:text-3xl font-extrabold text-newbery-navy mb-2">
+                ¡Bienvenido al Diario!
+            </h2>
+            <p class="text-slate-600 text-sm sm:text-base mb-6">
+                Ingresá tu nombre de usuario para leer y compartir noticias en el <strong class="text-newbery-navy">Diario Jorje Newbery</strong>.
+            </p>
+
+            <form id="welcomeForm" class="space-y-4">
+                <div class="text-left">
+                    <label for="usernameInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">
+                        Tu nombre de usuario
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input
+                            type="text"
+                            id="usernameInput"
+                            required
+                            maxlength="30"
+                            placeholder="Ej: Sofía G. - 5° Grado"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-newbery-blue focus:border-transparent transition"
+                        >
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full py-3.5 px-6 bg-newbery-navy hover:bg-blue-900 active:scale-[0.99] text-white font-bold rounded-2xl shadow-lg shadow-blue-950/20 transition flex items-center justify-center gap-2 text-base"
+                >
+                    <span>Listo, entrar al Diario</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== BARRA SUPERIOR DE USUARIO Y ESTADO ==================== -->
+    <div class="bg-newbery-navy text-white text-xs sm:text-sm py-2 px-4 border-b border-sky-400/20">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-sky-200">
+                <span id="connectionDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="connectionText" class="font-medium">Conectando en vivo...</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="text-slate-200 truncate max-w-[160px] sm:max-w-xs">
+                    <i class="fa-solid fa-circle-user text-newbery-gold mr-1"></i>
+                    <strong id="displayUsername">Invitado</strong>
+                </span>
+                <button
+                    id="changeUserBtn"
+                    type="button"
+                    title="Cambiar nombre de usuario"
+                    class="bg-white/10 hover:bg-white/20 text-white px-2.5 py-1 rounded-xl text-xs font-medium transition flex items-center gap-1"
+                >
+                    <i class="fa-solid fa-pen text-[10px]"></i>
+                    <span>Cambiar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ENCABEZADO PRINCIPAL (HEADER) ==================== -->
+    <header class="bg-white border-b-4 border-double border-slate-800 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 pt-6 pb-7 text-center">
+            <!-- Línea superior estilo periódico -->
+            <div class="flex items-center justify-between text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-slate-500 border-y border-slate-200 py-1.5 mb-5">
+                <span>Edición Digital Escolar</span>
+                <span id="currentDateDisplay" class="text-newbery-navy">Hoy</span>
+                <span>Comunidad Educativa</span>
+            </div>
+
+            <!-- TÍTULO PRINCIPAL EXACTO REQUERIDO -->
+            <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-newbery-navy leading-none mb-5">
+                Diario Jorje Newbery
+            </h1>
+
+            <!-- LOGO INSTITUCIONAL ESCUELA JORGE NEWBERY (SVG PROPIO) -->
+            <div class="flex flex-col items-center justify-center">
+                <div class="relative group">
+                    <svg viewBox="0 0 260 155" class="w-56 sm:w-64 h-auto mx-auto drop-shadow-sm" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo de la Escuela Jorge Newbery">
+                        <defs>
+                            <linearGradient id="navyEscudo" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#0f294a"/>
+                                <stop offset="100%" stop-color="#1e3a8a"/>
+                            </linearGradient>
+                            <linearGradient id="goldRibbon" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ca8a04"/>
+                                <stop offset="50%" stop-color="#facc15"/>
+                                <stop offset="100%" stop-color="#ca8a04"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Alas aeronáuticas exteriores (homenaje a Jorge Newbery) -->
+                        <path d="M18 56 C45 48, 72 55, 92 70 C70 68, 48 68, 26 72 Z" fill="#38bdf8"/>
+                        <path d="M30 76 C52 72, 74 75, 92 84 C72 83, 52 84, 36 88 Z" fill="#0284c7"/>
+                        <path d="M242 56 C215 48, 188 55, 168 70 C190 68, 212 68, 234 72 Z" fill="#38bdf8"/>
+                        <path d="M230 76 C208 72, 186 75, 168 84 C188 83, 208 84, 224 88 Z" fill="#0284c7"/>
+
+                        <!-- Escudo Central -->
+                        <path d="M130 12 L178 28 V68 C178 100 156 120 130 130 C104 120 82 100 82 68 V28 Z" fill="url(#navyEscudo)" stroke="#eab308" stroke-width="4"/>
+                        <!-- Borde interior celeste -->
+                        <path d="M130 19 L171 33 V67 C171 95 152 113 130 122 C108 113 89 95 89 67 V33 Z" fill="none" stroke="#7dd3fc" stroke-width="1.5" stroke-opacity="0.7"/>
+
+                        <!-- Sol naciente dorado arriba -->
+                        <circle cx="130" cy="40" r="9" fill="#facc15"/>
+                        <path d="M130 25 V28 M116 32 L119 34 M144 32 L141 34 M112 41 H116 M144 41 H148" stroke="#facc15" stroke-width="2" stroke-linecap="round"/>
+
+                        <!-- Iniciales JN -->
+                        <text x="130" y="69" text-anchor="middle" fill="#ffffff" font-family="Georgia, serif" font-weight="bold" font-size="22" letter-spacing="2">J · N</text>
+
+                        <!-- Libro abierto del saber -->
+                        <path d="M103 82 Q116 76 130 84 Q144 76 157 82 V98 Q144 91 130 99 Q116 91 103 98 Z" fill="#ffffff"/>
+                        <line x1="130" y1="84" x2="130" y2="99" stroke="#0f294a" stroke-width="1.5"/>
+
+                        <!-- Cinta inferior con el nombre de la escuela -->
+                        <path d="M46 122 Q130 136 214 122 L208 143 Q130 155 52 143 Z" fill="url(#goldRibbon)" stroke="#0f294a" stroke-width="1.5"/>
+                        <text x="130" y="139" text-anchor="middle" fill="#0f294a" font-family="Inter, sans-serif" font-weight="800" font-size="11" letter-spacing="1.2">ESCUELA JORGE NEWBERY</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== MENÚ / MURO DE PUBLICACIONES ==================== -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 pt-6 pb-28">
+        <!-- Barra de sección y contador -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-6 pb-3 border-b border-slate-300">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-newbery-navy text-white flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-newspaper"></i>
+                </span>
+                <div>
+                    <h2 class="font-serif text-xl sm:text-2xl font-bold text-slate-900">Últimas Publicaciones</h2>
+                    <p class="text-xs text-slate-500">Noticias y novedades publicadas por los alumnos y docentes</p>
+                </div>
+            </div>
+
+            <span id="postsCounter" class="bg-slate-200/80 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                Cargando noticias...
+            </span>
+        </div>
+
+        <!-- Estado de Carga -->
+        <div id="loadingState" class="py-16 text-center">
+            <div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-newbery-navy rounded-full animate-spin mb-3"></div>
+            <p class="text-slate-500 font-medium">Sincronizando ediciones con el servidor...</p>
+        </div>
+
+        <!-- Estado Vacío (si no hay publicaciones aún) -->
+        <div id="emptyState" class="hidden bg-white rounded-3xl border border-dashed border-slate-300 p-10 text-center shadow-sm">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-sky-50 text-newbery-blue flex items-center justify-center text-2xl">
+                <i class="fa-solid fa-feather-pointed"></i>
+            </div>
+            <h3 class="font-serif text-xl font-bold text-slate-800 mb-1">Aún no hay publicaciones en el diario</h3>
+            <p class="text-slate-500 text-sm max-w-md mx-auto mb-5">
+                ¡Sé el primero en escribir una noticia o título! Tocá el botón <strong class="text-newbery-navy">+</strong> en la esquina inferior derecha para publicar.
+            </p>
+            <button
+                type="button"
+                onclick="openCreateModal()"
+                class="inline-flex items-center gap-2 px-5 py-2.5 bg-newbery-navy hover:bg-blue-900 text-white text-sm font-semibold rounded-2xl transition shadow"
+            >
+                <i class="fa-solid fa-plus"></i>
+                <span>Crear primera publicación</span>
+            </button>
+        </div>
+
+        <!-- Contenedor Grid de Publicaciones -->
+        <div id="postsFeed" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Las tarjetas se insertan dinámicamente desde Firebase -->
+        </div>
+    </main>
+
+    <!-- ==================== BOTÓN FLOTANTE "+" EN LA ESQUINA ==================== -->
+    <button
+        id="openModalFab"
+        type="button"
+        aria-label="Nueva publicación"
+        title="Crear nueva publicación"
+        class="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-newbery-navy hover:bg-blue-800 active:scale-95 text-white shadow-2xl shadow-blue-950/40 border-2 border-newbery-gold flex items-center justify-center text-2xl transition-all duration-200 group"
+    >
+        <i class="fa-solid fa-plus transition-transform duration-200 group-hover:rotate-90"></i>
+    </button>
+
+    <!-- ==================== MODAL PARA CREAR PUBLICACIÓN ==================== -->
+    <div id="createPostModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn">
+            <!-- Cabecera del Modal -->
+            <div class="bg-newbery-navy px-6 py-4 flex items-center justify-between text-white">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-pen-to-square text-newbery-gold"></i>
+                    <h3 class="font-serif text-lg sm:text-xl font-bold">Nueva Publicación</h3>
+                </div>
+                <button
+                    id="closeModalBtn"
+                    type="button"
+                    class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
+                    aria-label="Cerrar"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Formulario -->
+            <form id="createPostForm" class="p-6 space-y-4">
+                <div>
+                    <label for="postTitleInput" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Nombre de la publicación <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="postTitleInput"
+                        required
+                        maxlength="100"
+                        placeholder="Ej: Acto del Día de la Bandera o Torneo de Fútbol"
+                        class="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-newbery-blue focus:border-transparent transition"
+                    >
+                </div>
+
+                <div>
+                    <label for="postContentInput" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Contenido o detalle <span class="text-slate-400 font-normal">(Opcional)</span>
+                    </label>
+                    <textarea
+                        id="postContentInput"
+                        rows="4"
+                        maxlength="800"
+                        placeholder="Escribí acá el desarrollo de la noticia, horarios, o lo que quieras compartir con la escuela..."
+                        class="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-newbery-blue focus:border-transparent transition resize-none"
+                    ></textarea>
+                </div>
+
+                <div class="bg-slate-100 px-4 py-2.5 rounded-2xl flex items-center justify-between text-xs text-slate-600">
+                    <span>Publicando como:</span>
+                    <strong id="modalAuthorName" class="text-newbery-navy">Usuario</strong>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        id="cancelPostBtn"
+                        class="px-5 py-2.5 rounded-2xl text-slate-600 hover:bg-slate-100 font-semibold text-sm transition"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        id="submitPostBtn"
+                        class="px-6 py-2.5 bg-newbery-navy hover:bg-blue-900 active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg shadow-blue-950/20 text-sm transition flex items-center gap-2"
+                    >
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Publicar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== NOTIFICACIÓN TOAST ==================== -->
+    <div id="toastNotification" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2.5 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium transition-all">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">¡Publicado con éxito!</span>
+    </div>
+
+    <!-- ==================== LÓGICA DE FIREBASE Y APLICACIÓN ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getDatabase,
+            ref,
+            push,
+            set,
+            onValue,
+            runTransaction,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        // Configuración de Firebase Realtime Database proporcionada
+        const firebaseConfig = {
+            databaseURL: "https://chat-con-canales-default-rtdb.firebaseio.com/"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const postsRef = ref(db, "diario_jorge_newbery/publicaciones");
+        const connectedRef = ref(db, ".info/connected");
+
+        // Clave para localStorage
+        const STORAGE_USER_KEY = "diario_newbery_username";
+        const STORAGE_LIKES_KEY = "diario_newbery_liked_posts";
+
+        // Elementos del DOM
+        const welcomeModal = document.getElementById("welcomeModal");
+        const welcomeForm = document.getElementById("welcomeForm");
+        const usernameInput = document.getElementById("usernameInput");
+        const displayUsername = document.getElementById("displayUsername");
+        const modalAuthorName = document.getElementById("modalAuthorName");
+        const changeUserBtn = document.getElementById("changeUserBtn");
+
+        const createPostModal = document.getElementById("createPostModal");
+        const openModalFab = document.getElementById("openModalFab");
+        const closeModalBtn = document.getElementById("closeModalBtn");
+        const cancelPostBtn = document.getElementById("cancelPostBtn");
+        const createPostForm = document.getElementById("createPostForm");
+        const postTitleInput = document.getElementById("postTitleInput");
+        const postContentInput = document.getElementById("postContentInput");
+        const submitPostBtn = document.getElementById("submitPostBtn");
+
+        const postsFeed = document.getElementById("postsFeed");
+        const loadingState = document.getElementById("loadingState");
+        const emptyState = document.getElementById("emptyState");
+        const postsCounter = document.getElementById("postsCounter");
+        const connectionDot = document.getElementById("connectionDot");
+        const connectionText = document.getElementById("connectionText");
+
+        // Mostrar fecha actual formateada en el encabezado
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const todayStr = new Date().toLocaleDateString('es-AR', dateOptions);
+        document.getElementById("currentDateDisplay").textContent = todayStr.charAt(0).toUpperCase() + todayStr.slice(1);
+
+        // Función para mostrar notificaciones Toast sin usar alert()
+        function showToast(message, isError = false) {
+            const toast = document.getElementById("toastNotification");
+            const toastIcon = document.getElementById("toastIcon");
+            const toastMessage = document.getElementById("toastMessage");
+
+            toastMessage.textContent = message;
+            toastIcon.className = isError
+                ? "fa-solid fa-circle-exclamation text-rose-400"
+                : "fa-solid fa-circle-check text-emerald-400";
+
+            toast.classList.remove("hidden");
+            toast.classList.add("flex");
+
+            setTimeout(() => {
+                toast.classList.add("hidden");
+                toast.classList.remove("flex");
+            }, 3000);
+        }
+
+        // ==================== GESTIÓN DE USUARIO ====================
+        function getCurrentUser() {
+            return localStorage.getItem(STORAGE_USER_KEY) || "";
+        }
+
+        function setCurrentUser(name) {
+            const cleanName = name.trim();
+            if (!cleanName) return;
+            localStorage.setItem(STORAGE_USER_KEY, cleanName);
+            updateUserUI(cleanName);
+        }
+
+        function updateUserUI(name) {
+            displayUsername.textContent = name;
+            modalAuthorName.textContent = name;
+        }
+
+        function checkInitialUser() {
+            const savedUser = getCurrentUser();
+            if (!savedUser) {
+                welcomeModal.classList.remove("hidden");
+                welcomeModal.classList.add("flex");
+                setTimeout(() => usernameInput.focus(), 100);
+            } else {
+                updateUserUI(savedUser);
+            }
+        }
+
+        welcomeForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const enteredName = usernameInput.value.trim();
+            if (enteredName.length < 2) {
+                showToast("Por favor ingresá un nombre válido", true);
+                return;
+            }
+            setCurrentUser(enteredName);
+            welcomeModal.classList.add("hidden");
+            welcomeModal.classList.remove("flex");
+            showToast(`¡Bienvenido/a, ${enteredName}!`);
+        });
+
+        changeUserBtn.addEventListener("click", () => {
+            usernameInput.value = getCurrentUser();
+            welcomeModal.classList.remove("hidden");
+            welcomeModal.classList.add("flex");
+            setTimeout(() => usernameInput.focus(), 100);
+        });
+
+        // ==================== MODAL DE CREACIÓN ====================
+        window.openCreateModal = function() {
+            if (!getCurrentUser()) {
+                checkInitialUser();
+                return;
+            }
+            createPostModal.classList.remove("hidden");
+            createPostModal.classList.add("flex");
+            setTimeout(() => postTitleInput.focus(), 100);
+        };
+
+        function closeCreateModal() {
+            createPostModal.classList.add("hidden");
+            createPostModal.classList.remove("flex");
+            createPostForm.reset();
+        }
+
+        openModalFab.addEventListener("click", window.openCreateModal);
+        closeModalBtn.addEventListener("click", closeCreateModal);
+        cancelPostBtn.addEventListener("click", closeCreateModal);
+
+        // Cerrar modal al hacer clic fuera de la tarjeta
+        createPostModal.addEventListener("click", (e) => {
+            if (e.target === createPostModal) closeCreateModal();
+        });
+
+        // Enviar nueva publicación a Firebase
+        createPostForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const title = postTitleInput.value.trim();
+            const content = postContentInput.value.trim();
+            const author = getCurrentUser() || "Anónimo";
+
+            if (!title) {
+                showToast("Escribí un nombre para la publicación", true);
+                return;
+            }
+
+            submitPostBtn.disabled = true;
+            submitPostBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Publicando...</span>`;
+
+            try {
+                const newPostRef = push(postsRef);
+                await set(newPostRef, {
+                    titulo: title,
+                    contenido: content,
+                    autor: author,
+                    fecha: serverTimestamp(),
+                    fechaLocal: new Date().toLocaleString("es-AR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }),
+                    likes: 0
+                });
+
+                closeCreateModal();
+                showToast("¡Publicación agregada al diario!");
+            } catch (error) {
+                console.error("Error al publicar en Firebase:", error);
+                showToast("Error al conectar con Firebase. Intentá de nuevo.", true);
+            } finally {
+                submitPostBtn.disabled = false;
+                submitPostBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i><span>Publicar</span>`;
+            }
+        });
+
+        // ==================== SISTEMA DE "ME GUSTA" EN TIEMPO REAL ====================
+        function getLikedPosts() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_LIKES_KEY) || "[]");
+            } catch {
+                return [];
+            }
+        }
+
+        function toggleLocalLike(postId) {
+            const liked = getLikedPosts();
+            const index = liked.indexOf(postId);
+            let isNowLiked = false;
+
+            if (index === -1) {
+                liked.push(postId);
+                isNowLiked = true;
+            } else {
+                liked.splice(index, 1);
+                isNowLiked = false;
+            }
+            localStorage.setItem(STORAGE_LIKES_KEY, JSON.stringify(liked));
+            return isNowLiked;
+        }
+
+        window.handleLikePost = async function(postId) {
+            const isNowLiked = toggleLocalLike(postId);
+            const postLikesRef = ref(db, `diario_jorge_newbery/publicaciones/${postId}/likes`);
+
+            try {
+                await runTransaction(postLikesRef, (currentLikes) => {
+                    const current = currentLikes || 0;
+                    return isNowLiked ? current + 1 : Math.max(0, current - 1);
+                });
+            } catch (error) {
+                console.error("Error actualizando Me gusta:", error);
+            }
+        };
+
+        // Escapar HTML para evitar inyección de código (XSS)
+        function escapeHTML(str) {
+            const div = document.createElement("div");
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ==================== RENDERIZADO EN TIEMPO REAL ====================
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                connectionDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+                connectionText.textContent = "Conectado en vivo";
+            } else {
+                connectionDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+                connectionText.textContent = "Sincronizando...";
+            }
+        });
+
+        onValue(postsRef, (snapshot) => {
+            loadingState.classList.add("hidden");
+            const data = snapshot.val();
+
+            if (!data) {
+                postsFeed.innerHTML = "";
+                emptyState.classList.remove("hidden");
+                postsCounter.textContent = "0 publicaciones";
+                return;
+            }
+
+            emptyState.classList.add("hidden");
+
+            // Convertir objeto de Firebase en array y ordenar de más reciente a más antigua
+            const postsArray = Object.entries(data).map(([id, post]) => ({
+                id,
+                ...post
+            }));
+
+            postsArray.sort((a, b) => {
+                const timeA = typeof a.fecha === "number" ? a.fecha : 0;
+                const timeB = typeof b.fecha === "number" ? b.fecha : 0;
+                return timeB - timeA;
+            });
+
+            postsCounter.textContent = `${postsArray.length} ${postsArray.length === 1 ? "publicación" : "publicaciones"}`;
+            const likedPosts = getLikedPosts();
+
+            postsFeed.innerHTML = postsArray.map((post, index) => {
+                const isLiked = likedPosts.includes(post.id);
+                const likesCount = post.likes || 0;
+                const safeTitle = escapeHTML(post.titulo || "Sin título");
+                const safeAuthor = escapeHTML(post.autor || "Anónimo");
+                const safeContent = post.contenido ? escapeHTML(post.contenido) : "";
+                const formattedDate = post.fecha
+                    ? new Date(post.fecha).toLocaleString("es-AR", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    })
+                    : (post.fechaLocal || "Reciente");
+
+                // Destacar la primera publicación más reciente en pantallas medianas/grandes
+                const isFeatured = index === 0;
+
+                return `
+                    <article class="bg-white rounded-3xl border ${isFeatured ? 'border-newbery-navy/30 md:col-span-2 shadow-md' : 'border-slate-200 shadow-sm'} p-5 sm:p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isFeatured ? 'bg-newbery-navy text-white' : 'bg-sky-50 text-newbery-navy'}">
+                                    <i class="fa-solid ${isFeatured ? 'fa-star text-newbery-gold' : 'fa-bookmark text-sky-500'} text-[10px]"></i>
+                                    ${isFeatured ? 'Última Edición' : 'Noticia Escolar'}
+                                </span>
+                                <time class="text-xs text-slate-400 font-medium">
+                                    <i class="fa-regular fa-clock mr-1"></i>${formattedDate}
+                                </time>
+                            </div>
+
+                            <h3 class="font-serif ${isFeatured ? 'text-2xl sm:text-3xl' : 'text-xl'} font-extrabold text-slate-900 leading-snug mb-2">
+                                ${safeTitle}
+                            </h3>
+
+                            ${safeContent ? `
+                                <p class="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line mb-4">
+                                    ${safeContent}
+                                </p>
+                            ` : '<div class="mb-3"></div>'}
+                        </div>
+
+                        <div class="pt-3.5 mt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-7 h-7 rounded-full bg-newbery-navy/10 text-newbery-navy font-bold text-xs flex items-center justify-center shrink-0 uppercase">
+                                    ${safeAuthor.charAt(0)}
+                                </div>
+                                <span class="text-xs sm:text-sm font-semibold text-slate-700 truncate">
+                                    ${safeAuthor}
+                                </span>
+                            </div>
+
+                            <button
+                                type="button"
+                                onclick="handleLikePost('${post.id}')"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition active:scale-95 ${
+                                    isLiked
+                                        ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                                }"
+                            >
+                                <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                                <span>${likesCount}</span>
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join("");
+        }, (error) => {
+            console.error("Error leyendo publicaciones de Firebase:", error);
+            loadingState.innerHTML = `
+                <div class="bg-rose-50 text-rose-700 p-4 rounded-2xl max-w-md mx-auto text-sm font-medium">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    No se pudieron cargar las publicaciones. Verificá las reglas de lectura de Firebase.
+                </div>
+            `;
+        });
+
+        // Iniciar verificación de usuario al cargar la página
+        checkInitialUser();
+    </script>
+</body>
+</html>
